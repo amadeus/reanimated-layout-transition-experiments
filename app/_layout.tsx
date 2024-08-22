@@ -1,6 +1,6 @@
-import {useState} from 'react';
+import {useState, useCallback} from 'react';
 import {Image, StyleSheet, Platform, View, Pressable, Text} from 'react-native';
-import Reanimated, {LinearTransition} from 'react-native-reanimated';
+import Reanimated, {type ExitAnimationsValues, withTiming} from 'react-native-reanimated';
 
 import {HelloWave} from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -15,47 +15,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'grey',
   },
-  animatedBox: {
+  box: {
     backgroundColor: 'red',
-    borderRadius: 20,
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'stretch',
-    padding: 4,
-  },
-  stateA: {
-    top: 0,
-    width: 100,
+    borderRadius: 10,
+    width: 300,
     height: 100,
   },
-  stateB: {
-    width: 300,
-    height: 200,
-  },
-  leftBox: {
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  rightBox: {
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  child: {
+  buttonWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 20,
     display: 'flex',
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  childMarginA: {
-    margin: 4,
-  },
-  childMarginB: {
-    margin: 2,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
   },
   button: {
-    position: 'absolute',
     bottom: 100,
-    width: 100,
+    width: '45%',
+    paddingHorizontal: 10,
     height: 50,
     marginTop: 80,
     backgroundColor: 'green',
@@ -69,34 +48,51 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white',
   },
-  bufferBox: {
-    width: 100,
-    height: 20,
-    marginTop: 40,
-    backgroundColor: 'green',
-  },
 });
 
-const transition = LinearTransition.springify().mass(0.5).damping(10).stiffness(100);
-
 export default function HomeScreen() {
-  const [state, setState] = useState(false);
+  const [showElement, setShowElement] = useState(true);
+  const [disableExiting, setDisableExiting] = useState(false);
+  const exiting = useCallback(
+    (values: ExitAnimationsValues) => {
+      'worklet';
+      if (disableExiting) {
+        return {
+          animations: {
+            height: 10,
+            opacity: 0.1,
+          },
+          initialValues: {
+            height: values.currentHeight,
+            opacity: 1,
+          },
+        };
+      } else {
+        return {
+          animations: {
+            height: withTiming(10, {duration: 300}),
+            opacity: 0.1,
+          },
+          initialValues: {
+            height: values.currentHeight,
+            opacity: 1,
+          },
+        };
+      }
+    },
+    [disableExiting]
+  );
   return (
     <View style={styles.wrapper}>
-      <Reanimated.View style={[styles.animatedBox, state ? styles.stateB : styles.stateA]} layout={transition}>
-        <Reanimated.View
-          style={[styles.leftBox, styles.child, state ? styles.childMarginB : styles.childMarginA]}
-          layout={transition}
-        />
-        <Reanimated.View
-          style={[styles.rightBox, styles.child, state ? styles.childMarginB : styles.childMarginA]}
-          layout={transition}
-        />
-      </Reanimated.View>
-      <Reanimated.View style={styles.bufferBox} layout={transition} />
-      <Pressable onPress={() => setState(!state)} style={styles.button}>
-        <Text style={styles.text}>Toggle</Text>
-      </Pressable>
+      {showElement && <Reanimated.View style={styles.box} exiting={exiting} />}
+      <View style={styles.buttonWrapper}>
+        <Pressable onPress={() => setShowElement(!showElement)} style={styles.button}>
+          <Text style={styles.text}>Toggle Element</Text>
+        </Pressable>
+        <Pressable onPress={() => setDisableExiting(!disableExiting)} style={styles.button}>
+          <Text style={styles.text}>Animation {disableExiting ? 'Off' : 'On'}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
