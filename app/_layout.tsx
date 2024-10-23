@@ -1,6 +1,11 @@
 import {useState} from 'react';
 import {Image, StyleSheet, Platform, View, Pressable, Text} from 'react-native';
-import Reanimated, {LinearTransition} from 'react-native-reanimated';
+import Reanimated, {
+  LinearTransition,
+  type LayoutAnimation,
+  type LayoutAnimationsValues,
+  withSpring,
+} from 'react-native-reanimated';
 
 import {HelloWave} from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -77,23 +82,41 @@ const styles = StyleSheet.create({
   },
 });
 
+function layoutTransition(values: LayoutAnimationsValues): LayoutAnimation {
+  'worklet';
+  return {
+    initialValues: {
+      originX: values.currentOriginX,
+      originY: values.currentOriginY,
+      width: values.currentWidth,
+      height: values.currentHeight,
+    },
+    animations: {
+      originX: withSpring(values.targetOriginX),
+      originY: withSpring(values.targetOriginY),
+      width: withSpring(values.targetWidth),
+      height: withSpring(values.targetHeight),
+    },
+  };
+}
+
 const transition = LinearTransition.springify().mass(0.5).damping(10).stiffness(100);
 
 export default function HomeScreen() {
   const [state, setState] = useState(false);
   return (
     <View style={styles.wrapper}>
-      <Reanimated.View style={[styles.animatedBox, state ? styles.stateB : styles.stateA]} layout={transition}>
+      <Reanimated.View style={[styles.animatedBox, state ? styles.stateB : styles.stateA]} layout={layoutTransition}>
         <Reanimated.View
           style={[styles.leftBox, styles.child, state ? styles.childMarginB : styles.childMarginA]}
-          layout={transition}
+          layout={layoutTransition}
         />
         <Reanimated.View
           style={[styles.rightBox, styles.child, state ? styles.childMarginB : styles.childMarginA]}
-          layout={transition}
+          layout={layoutTransition}
         />
       </Reanimated.View>
-      <Reanimated.View style={styles.bufferBox} layout={transition} />
+      <Reanimated.View style={styles.bufferBox} layout={layoutTransition} />
       <Pressable onPress={() => setState(!state)} style={styles.button}>
         <Text style={styles.text}>Toggle</Text>
       </Pressable>
